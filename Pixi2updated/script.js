@@ -1,4 +1,5 @@
-// Создаем сцену Pixi.js
+window.onLoad = () => {
+  // Создаем сцену Pixi.js
 const app = new PIXI.Application({
   width: 800,
   height: 500,
@@ -314,3 +315,5 @@ function calculateWinning(numbersArray, prizes) {
 }
 
 
+
+}
