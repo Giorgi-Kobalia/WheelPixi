@@ -1,62 +1,61 @@
 .main {
-    min-width: 1200px;
-    display: flex;
-    column-gap: 50px;
-    align-items: center;
-    justify-content: center;
+  min-width: 1200px;
+  display: flex;
+  column-gap: 50px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 150px;
 }
 
 .buttons {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    flex-direction: column;
-    height: 500px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  height: 500px;
 }
 
 .buttons button {
-
-    min-width: 100px;
-    border-radius: 10px;
-    height: 50px;
+  min-width: 100px;
+  border-radius: 10px;
+  height: 50px;
+  margin: 4px;
 }
 
 .container {
-    min-width: 800px;
+  min-width: 800px;
 }
 
 .list {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    flex-direction: column;
-    height: 500px;
-    color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  height: 500px;
+  color: white;
 }
 
 .list-prize {
-    min-width: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 25px;
-    border-radius: 10px;
+  min-width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 25px;
+  border-radius: 10px;
 }
 
-
 .active {
-    animation: flash 1.01s infinite linear;
+  animation: flash 1.01s infinite linear;
 }
 
 @keyframes flash {
-    from {
-        background-color: #ff0000;
-        /* Начальный цвет фона */
-    }
-    
-    to {
-        
-        background-color: "#BC8F8F";
-        /* Цвет фона во время мигания */
-    }
+  from {
+    background-color: #ff0000;
+    /* Начальный цвет фона */
+  }
+
+  to {
+    background-color: "#BC8F8F";
+    /* Цвет фона во время мигания */
+  }
 }
