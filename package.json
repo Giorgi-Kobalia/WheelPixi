@@ -1,0 +1,17 @@
+{
+  "name": "wheelpixi",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pixi.js": "^7.2.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

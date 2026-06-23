@@ -31,13 +31,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Set up Node.js (adjust version as needed)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22" # Change to your preferred Node.js version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Build static files
+      - name: Build static files
+        run: npm run build
+
+      # Set up GitHub Pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # Upload the static content from the dist folder
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: 'Pixi2updated'
+          path: "./dist" # Path to your static files
+
+      # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
