@@ -9,7 +9,13 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: linear-gradient(
+    to bottom,
+    #4b2e83 0%,
+    #2a1457 35%,
+    #170a2e 70%,
+    #0a0414 100%
+  );
 }
 
 #wheel {

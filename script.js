@@ -7,20 +7,24 @@ window.onload = async () => {
     minPrizes: 6,
     maxPrizes: 16,
     defaultPrizes: 6,
-    sectorColor: "#BC8F8F",
-    wheelCenter: { x: 700, y: 325 },
+    sectorColor: 0x101e44,
+    sectorHighlightColor: 0xffb300,
+    sectorHighlightTextColor: 0x101e44,
+    sectorTextColor: 0xffffff,
+    wheelCenter: { x: 550, y: 325 },
     wheelRadius: 200,
     spinButtonRadius: 40,
     spinDuration: 4000,
     winFlashDuration: 3000,
-    buttonsPanel: { x: 40, y: 90, width: 220, height: 480, gapX: 14, gapY: 12 },
+    maxButtonsPerSide: 8,
+    buttonsPanel: { width: 190, height: 54, gapY: 14, sideGap: 120 },
   };
 
   const app = new PIXI.Application({
     antialias: true,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true,
-    backgroundColor: 0x111111,
+    backgroundAlpha: 0,
   });
 
   document.getElementById("wheel").appendChild(app.view);
@@ -28,37 +32,20 @@ window.onload = async () => {
   const root = new PIXI.Container();
   app.stage.addChild(root);
 
-  const bgTexture = await PIXI.Assets.load("./bcg1.png");
-  const bgSprite = new PIXI.Sprite(bgTexture);
-  bgSprite.anchor.set(0.5);
-  app.stage.addChildAt(bgSprite, 0);
-
-  function layoutBackground() {
-    const screenW = app.screen.width;
-    const screenH = app.screen.height;
-    const scale = Math.max(
-      screenW / bgTexture.width,
-      screenH / bgTexture.height
-    );
-    bgSprite.scale.set(scale);
-    bgSprite.position.set(screenW / 2, screenH / 2);
-  }
-
   function layoutRoot() {
     const scale = Math.min(
       app.screen.width / CONFIG.designWidth,
-      app.screen.height / CONFIG.designHeight
+      app.screen.height / CONFIG.designHeight,
     );
     root.scale.set(scale);
     root.position.set(
       (app.screen.width - CONFIG.designWidth * scale) / 2,
-      (app.screen.height - CONFIG.designHeight * scale) / 2
+      (app.screen.height - CONFIG.designHeight * scale) / 2,
     );
   }
 
   function resizeApp() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
-    layoutBackground();
     layoutRoot();
   }
 
@@ -72,11 +59,11 @@ window.onload = async () => {
     height,
     label,
     fontSize = 18,
-    fill = 0xffffff,
-    textColor = "black",
+    fill = 0x101e44,
+    textColor = "white",
     radius = 10,
     shape = "rect",
-    borderColor = 0x333333,
+    borderColor = 0xffffff,
     borderWidth = 2,
     onClick,
   }) {
@@ -103,9 +90,23 @@ window.onload = async () => {
     container.addChild(bg, text);
     container.eventMode = "static";
     container.cursor = "pointer";
-    container.on("pointerdown", onClick);
-    container.on("pointerover", () => (container.alpha = 0.8));
-    container.on("pointerout", () => (container.alpha = 1));
+    container.on("pointerup", onClick);
+    container.on("pointerover", () => container.scale.set(1.1));
+    container.on("pointerout", () => container.scale.set(1));
+
+    container.setEnabled = (enabled) => {
+      if (enabled) {
+        container.eventMode = "dynamic";
+        container.cursor = "pointer";
+        container.alpha = 1;
+        container.scale.set(1);
+      } else {
+        container.eventMode = "none";
+        container.cursor = "default";
+        container.alpha = 0.5;
+        container.scale.set(1);
+      }
+    };
 
     return container;
   }
@@ -230,6 +231,8 @@ window.onload = async () => {
     const angle = (2 * Math.PI) / prizes.length;
     const radius = CONFIG.wheelRadius;
     const sectorGraphicsArray = [];
+    const sectorHighlightArray = [];
+    const sectorTextArray = [];
 
     prizes.forEach((prize, index) => {
       const midAngle = angle * index;
@@ -237,7 +240,7 @@ window.onload = async () => {
       const endAngle = midAngle + angle / 2;
 
       const prizeGraphic = new PIXI.Graphics();
-      prizeGraphic.lineStyle(2, 0x000000, 0.3);
+      prizeGraphic.lineStyle(3, 0xffffff, 1);
       prizeGraphic.beginFill(prize.color);
       prizeGraphic.moveTo(0, 0);
       prizeGraphic.arc(0, 0, radius, startAngle, endAngle);
@@ -245,13 +248,22 @@ window.onload = async () => {
       prizeGraphic.closePath();
       prizeGraphic.endFill();
 
+      const highlight = new PIXI.Graphics();
+      highlight.beginFill(CONFIG.sectorHighlightColor);
+      highlight.moveTo(0, 0);
+      highlight.arc(0, 0, radius, startAngle, endAngle);
+      highlight.lineTo(0, 0);
+      highlight.closePath();
+      highlight.endFill();
+      highlight.alpha = 0;
+
       const textRadius = radius * 0.65;
       const textX = textRadius * Math.cos(midAngle);
       const textY = textRadius * Math.sin(midAngle);
 
       const text = new PIXI.Text(prize.title, {
         fontSize: 16,
-        fill: "white",
+        fill: CONFIG.sectorTextColor,
         fontFamily: "Arial",
       });
       text.anchor.set(0.5);
@@ -259,7 +271,9 @@ window.onload = async () => {
       text.angle = index * (360 / prizes.length) + 90;
 
       sectorGraphicsArray.push(prizeGraphic);
-      barrelContainer.addChild(prizeGraphic, text);
+      sectorHighlightArray.push(highlight);
+      sectorTextArray.push(text);
+      barrelContainer.addChild(prizeGraphic, highlight, text);
     });
 
     const spinButton = createButton({
@@ -274,35 +288,52 @@ window.onload = async () => {
     });
     screen.addChild(spinButton);
 
-    const numbersArray = Array.from(
-      { length: prizes.length },
-      (_, i) => i + 1
-    );
+    const numbersArray = Array.from({ length: prizes.length }, (_, i) => i + 1);
     const buttonsArray = [];
     let stepCount = 0;
 
     const panel = CONFIG.buttonsPanel;
-    const columns = prizes.length > 8 ? 2 : 1;
-    const rows = Math.ceil(prizes.length / columns);
-    const cellWidth = (panel.width - (columns - 1) * panel.gapX) / columns;
-    const cellHeight = Math.min(
-      54,
-      (panel.height - (rows - 1) * panel.gapY) / rows
-    );
+    const maxPerSide = CONFIG.maxButtonsPerSide;
+    const leftCount = Math.min(prizes.length, maxPerSide);
+    const rightCount = Math.max(0, prizes.length - maxPerSide);
+
+    function layoutSide(count, side) {
+      if (count === 0) return [];
+
+      const totalHeight = count * panel.height + (count - 1) * panel.gapY;
+      const startY = CONFIG.wheelCenter.y - totalHeight / 2 + panel.height / 2;
+      const x =
+        side === "left"
+          ? CONFIG.wheelCenter.x -
+            CONFIG.wheelRadius -
+            panel.sideGap -
+            panel.width / 2
+          : CONFIG.wheelCenter.x +
+            CONFIG.wheelRadius +
+            panel.sideGap +
+            panel.width / 2;
+
+      return Array.from({ length: count }, (_, i) => ({
+        x,
+        y: startY + i * (panel.height + panel.gapY),
+      }));
+    }
+
+    const positions = [
+      ...layoutSide(leftCount, "left"),
+      ...layoutSide(rightCount, "right"),
+    ];
 
     for (let i = 0; i < prizes.length; i++) {
-      const col = i % columns;
-      const row = Math.floor(i / columns);
-      const x = panel.x + cellWidth / 2 + col * (cellWidth + panel.gapX);
-      const y = panel.y + cellHeight / 2 + row * (cellHeight + panel.gapY);
+      const { x, y } = positions[i];
 
       const button = createButton({
         x,
         y,
-        width: cellWidth,
-        height: cellHeight,
+        width: panel.width,
+        height: panel.height,
         label: `Sector ${i + 1}`,
-        fontSize: cellHeight < 40 ? 13 : 16,
+        fontSize: 16,
         onClick: () => handleClick(i + 1),
       });
       button.prizeIndex = i + 1;
@@ -311,9 +342,7 @@ window.onload = async () => {
     }
 
     function easeInOut(t) {
-      return t < 0.5
-        ? 4 * t * t * t
-        : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+      return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
     }
 
     function rotateBarrel() {
@@ -335,8 +364,7 @@ window.onload = async () => {
         const easedProgress = easeInOut(progress);
 
         barrelContainer.rotation =
-          initialRotation +
-          (targetRotation - initialRotation) * easedProgress;
+          initialRotation + (targetRotation - initialRotation) * easedProgress;
 
         if (progress < 1) {
           requestAnimationFrame(animate);
@@ -348,10 +376,16 @@ window.onload = async () => {
       requestAnimationFrame(animate);
     }
 
+    function setAllButtonsEnabled(enabled) {
+      buttonsArray.forEach((button) => button.setEnabled(enabled));
+      spinButton.setEnabled(enabled);
+    }
+
     function handleClick(buttonIndex) {
       if (isPlaying) return;
 
       isPlaying = true;
+      setAllButtonsEnabled(false);
 
       const numberIndex = numbersArray.indexOf(buttonIndex);
 
@@ -377,17 +411,32 @@ window.onload = async () => {
 
       if (index < 0 || index >= prizes.length) return;
 
-      const sector = sectorGraphicsArray[index];
-      sector.tint = 0xff0000;
+      const highlight = sectorHighlightArray[index];
+      const text = sectorTextArray[index];
+
+      function setFlashOn() {
+        highlight.alpha = 1;
+        text.style.fill = CONFIG.sectorHighlightTextColor;
+      }
+
+      function setFlashOff() {
+        highlight.alpha = 0;
+        text.style.fill = CONFIG.sectorTextColor;
+      }
+
+      setFlashOn();
+      let isOn = true;
 
       const interval = setInterval(() => {
-        sector.tint = sector.tint === 0xff0000 ? 0xffffff : 0xff0000;
+        isOn = !isOn;
+        isOn ? setFlashOn() : setFlashOff();
       }, 500);
 
       setTimeout(() => {
         clearInterval(interval);
-        sector.tint = 0xffffff;
+        setFlashOff();
         isPlaying = false;
+        setAllButtonsEnabled(true);
       }, CONFIG.winFlashDuration);
     }
   }
